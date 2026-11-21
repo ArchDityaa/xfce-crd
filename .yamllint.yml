@@ -1,0 +1,36 @@
+---
+# Konfigurasi yamllint untuk repo ini.
+#
+# Workflow ringkas (logika ada di scripts/), tetapi beberapa nama step,
+# komentar bagian, dan ekspresi `${{ }}` tetap lebih dari 80 kolom. Karena itu
+# beberapa aturan gaya "YAML untuk dibaca manusia" dilonggarkan, supaya CI
+# fokus pada kesalahan nyata (sintaks, indentasi, duplikasi key) alih-alih gaya.
+extends: default
+
+rules:
+  # Nama step/komentar bagian dan ekspresi `${{ }}` wajar melewati 80 kolom.
+  # Batas ini tidak relevan dan hanya menghasilkan temuan palsu.
+  line-length: disable
+
+  # GitHub Actions memakai key `on:` sebagai nama pemicu. Aturan truthy
+  # bawaan bisa salah menganggap `on` sebagai boolean.
+  truthy:
+    check-keys: false
+
+  # Komentar di dalam blok `run: |` mengikuti indentasi skrip shell,
+  # bukan indentasi YAML.
+  comments-indentation: disable
+
+  # Banyak blok shell memakai kutip/brace dengan spasi longgar.
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Workflow tidak memakai penanda awal dokumen (---).
+  document-start: disable
+
+  comments:
+    min-spaces-from-content: 1

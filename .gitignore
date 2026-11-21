@@ -1,0 +1,18 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Log & artefak lokal
+*.log
+tmp/
+
+# Python
+__pycache__/
+*.pyc
+
+# Prompt lokal (tidak ikut repo)
+prompt.md

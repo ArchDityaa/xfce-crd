@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Safe Upgrade
+Comment=Upgrade packages without breaking the CRD session
+Exec=xfce4-terminal --command=safe-upgrade
+Icon=system-software-update
+Terminal=false
+Categories=System;PackageManager;

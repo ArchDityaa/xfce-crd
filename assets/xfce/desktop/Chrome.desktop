@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Google Chrome
+Comment=Browse the web
+Exec=google-chrome
+Icon=google-chrome
+Terminal=false
+Categories=Network;WebBrowser;

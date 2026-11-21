@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Settings
+Comment=Configure the XFCE desktop
+Exec=xfce4-settings-manager
+Icon=preferences-system
+Terminal=false
+Categories=Settings;

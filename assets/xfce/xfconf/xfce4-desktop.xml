@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Desktop XFCE (xfdesktop).
+
+  - Wallpaper diisi oleh /usr/local/bin/set-wallpaper.sh, karena nama
+    monitor pada driver dummy Xorg bisa berbeda antar runner. File ini
+    tetap mengunci gaya gambar (zoom) dan mengaktifkan ikon Desktop.
+  - Ikon filesystem/home/trash/removable disembunyikan supaya tidak ada
+    redraw berulang saat monitor virtual berubah.
+-->
+<channel name="xfce4-desktop" version="1.0">
+  <property name="backdrop" type="empty">
+    <property name="screen0" type="empty">
+      <property name="monitor0" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="image-show" type="bool" value="false"/>
+          <property name="last-image" type="string" value="/home/runner/Pictures/wallpaper.png"/>
+          <property name="random-image" type="bool" value="false"/>
+        </property>
+      </property>
+    </property>
+  </property>
+  <property name="desktop-icons" type="empty">
+    <property name="file-icons" type="empty">
+      <property name="show-filesystem" type="bool" value="false"/>
+      <property name="show-home" type="bool" value="false"/>
+      <property name="show-trash" type="bool" value="false"/>
+      <property name="show-removable" type="bool" value="false"/>
+      <property name="show-mounted" type="bool" value="false"/>
+      <property name="style" type="int" value="0"/>
+    </property>
+    <property name="icon-size" type="uint" value="32"/>
+  </property>
+</channel>

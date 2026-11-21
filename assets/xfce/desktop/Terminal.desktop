@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Terminal
+Comment=Open a terminal window
+Exec=xfce4-terminal
+Icon=org.xfce.terminal
+Terminal=false
+Categories=System;TerminalEmulator;

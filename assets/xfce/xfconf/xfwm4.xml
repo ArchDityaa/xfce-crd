@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Konfigurasi xfwm4 untuk sesi Chrome Remote Desktop.
+
+  Poin utama repo ini: TIDAK ADA COMPOSITOR.
+  Tanpa compositor, xfwm4 tidak melakukan composite pass tiap frame dan
+  tidak memakai GL untuk shadow/alpha. Di runner GitHub tidak ada GPU,
+  jadi render software (llvmpipe) menjadi jauh lebih murah dan CPU idle
+  turun drastis. Streaming video ke Chrome Remote Desktop juga ikut
+  lebih ringan karena frame yang harus di-capture lebih sedikit.
+
+  Selain itu: animasi dimatikan via xsettings.xml, dan event sound
+  dinonaktifkan supaya tidak ada delay audio saat klik.
+-->
+<channel name="xfwm4" version="1.0">
+  <property name="general" type="empty">
+    <!-- Inti optimasi: matikan compositor. -->
+    <property name="use_compositing" type="bool" value="false"/>
+
+    <!-- Judul window + font. -->
+    <property name="title_font" type="string" value="JetBrainsMono Nerd Font Bold 10"/>
+    <property name="title_horizontal_offset" type="int" value="2"/>
+    <property name="title_vertical_offset" type="int" value="0"/>
+
+    <!-- Tema window manager (isi dari ZIP Catppuccin GTK). -->
+    <property name="theme" type="string" value="catppuccin-macchiato-mauve-standard+default"/>
+
+    <!-- Shadow membutuhkan compositor -> matikan. -->
+    <property name="show_frame_shadow" type="bool" value="false"/>
+
+    <!-- Aksibelitas mouse. -->
+    <property name="snap_to_border" type="bool" value="true"/>
+    <property name="snap_to_windows" type="bool" value="true"/>
+    <property name="snap_to_windows_drag" type="bool" value="false"/>
+    <property name="wrap_workspaces" type="bool" value="false"/>
+    <property name="cycle_delay" type="int" value="250"/>
+    <property name="cycle_hidden" type="bool" value="true"/>
+
+    <!-- Klik pada window manager untuk fokus, bukan raise+focus. -->
+    <property name="click_to_focus" type="bool" value="true"/>
+  </property>
+</channel>

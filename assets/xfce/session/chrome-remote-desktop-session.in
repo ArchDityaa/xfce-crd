@@ -1,0 +1,62 @@
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export NEEDRESTART_MODE=l
+
+# ============================================================
+#  Sesi XFCE untuk Chrome Remote Desktop (headless X11)
+#
+#  Prinsip:
+#   - Exec langsung ke /usr/bin/xfce4-session. Tidak ada Xsession,
+#     lightdm, atau startxfce4 wrapper (wrapper yang bisa jadi pemutus sesi).
+#   - Env desktop ditulis eksplisit supaya XFCE tidak menebak-nebak.
+#   - Tidak ada compositor (diatur di xfwm4.xml) -> beban software
+#     rendering minimal.
+# ============================================================
+
+export DESKTOP_SESSION=xfce
+export XDG_SESSION_DESKTOP=xfce
+export XDG_CURRENT_DESKTOP=XFCE
+export XDG_SESSION_TYPE=x11
+export XDG_RUNTIME_DIR=/run/user/@RUNNER_UID@
+
+# ============================================================
+#  PINDAH KE X11 MURNI
+#
+#  XFCE 4.20 memilih sesi Wayland (labwc) kalau WAYLAND_DISPLAY tersedia.
+#  Kalau environment runner kebawa variabel Wayland, sesi akan berjalan
+#  sebagai Wayland tanpa layer-shell: panel tidak bisa digambar dengan
+#  benar dan xfwm4 tidak dipakai. Kita paksa X11.
+#
+#  XDG_SESSION_CLASS sengaja di-unset: kalau diisi, systemd bisa
+#  menganggap sesi ini session systemd (systemd-logind) dan session
+#  manager tidak berjalan seperti yang diharapkan.
+# ============================================================
+unset WAYLAND_DISPLAY
+unset XDG_SESSION_CLASS
+unset QT_QPA_PLATFORM
+unset GDK_BACKEND
+export XDG_SESSION_TYPE=x11
+export XDG_CURRENT_DESKTOP=XFCE
+export GDK_BACKEND=x11
+
+# Software rendering (llvmpipe): runner GitHub tidak punya GPU.
+export LIBGL_ALWAYS_SOFTWARE=1
+
+# Matikan aksesibilitas AT-SPI (hemat RAM dan sedikit latency).
+export NO_AT_BRIDGE=1
+export GTK_A11Y=none
+export ACCESSIBILITY_ENABLED=0
+
+# Layer 2 pengaman lock/screensaver (lapisan pertama = tidak memasang
+# xfce4-screensaver / light-locker sama sekali).
+xset s off -dpms s noblank 2>/dev/null || true
+
+# Resolusi: 1280x720. Mode virtual ini dibuat CRD lewat
+# CHROME_REMOTE_DESKTOP_DEFAULT_DESKTOP_SIZES (systemd drop-in + ~/.profile).
+# Helper /usr/local/bin/set-resolution.sh (dipasang STEP 08) adalah jaring
+# pengaman: memakai mode yang sudah ada, membuat mode baru via CVT, atau
+# fallback ke 1024x768 mode native.
+if [ -x /usr/local/bin/set-resolution.sh ]; then
+  /usr/local/bin/set-resolution.sh >/dev/null 2>&1 || true
+fi
+
+exec /usr/bin/xfce4-session

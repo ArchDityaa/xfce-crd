@@ -1,0 +1,261 @@
+name: XFCE 24.04
+
+# ============================================================================
+#  RICH LINUX - XFCE + Chrome Remote Desktop
+# ============================================================================
+#  Menyediakan desktop XFCE lengkap di GitHub-hosted runner (ubuntu-24.04),
+#  dapat diakses dari browser lewat Chrome Remote Desktop. Fokus repo ini:
+#  kecepatan, stabilitas, dan jejak resource sekecil mungkin.
+#
+#  Kenapa XFCE:
+#    - XFCE 4.18 (X11) ringan: tidak ada Mutter/compositor, tidak ada
+#      Wayland-only, tidak ada animasi yang dipaksa hidup.
+#    - Compositor dimatikan => beban render software (llvmpipe) jauh lebih
+#      kecil, sehingga stream video CRD lebih halus dan CPU idle rendah.
+#    - Build jauh lebih cepat dan paket lebih sedikit dibanding GNOME.
+#
+#  CARA PAKAI (dari fork Anda sendiri):
+#    1. Fork repo ini, lalu aktifkan Actions di fork
+#       (Settings > Actions > General > Allow all actions).
+#    2. (Opsional) Set secret CRD_PIN (min. 6 digit). Default: 123456.
+#    3. Tab Actions -> workflow ini -> Run workflow (TANPA input auth).
+#    4. Tunggu ~8-15 menit. Setelah desktop siap, workflow menampilkan
+#       URL form otorisasi (Cloudflare quick tunnel) di log + Job Summary.
+#    5. Buka URL itu, lalu di tab lain buka
+#       https://remotedesktop.google.com/headless -> Begin -> Next ->
+#       Authorize, copy SELURUH perintah "Debian Linux", paste ke form,
+#       lalu submit. Kode dibuat SETELAH desktop siap, jadi tidak kedaluwarsa.
+#    6. Workflow langsung mendaftarkan device. Connect ke
+#       https://remotedesktop.google.com/access (device "xfce", user
+#       "runner").
+#
+#  Input `crd_host_command` tetap ada sebagai FALLBACK opsional kalau tunnel
+#  gagal dibuat. Normalnya biarkan kosong.
+#
+#  Panduan lengkap + troubleshooting: README.md / docs/troubleshooting.md.
+#  Batas: job GitHub-hosted maksimum 6 jam, jadi sesi hidup ~6 jam per run.
+# ============================================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      crd_host_command:
+        description: "OPSIONAL (fallback): paste perintah CRD. Normalnya biarkan kosong - form web muncul setelah desktop siap."
+        required: false
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+
+      - name: Checkout repository (for scripts/)
+        uses: actions/checkout@v4
+
+      - id: dated
+        run: echo "today=$(date +'%Y%m%d')" >> "$GITHUB_OUTPUT"
+
+      # CATATAN: `actions/cache@v4` dengan input `save-always` sudah DEPRECATED
+      # dan tidak berfungsi sesuai niat. Padahal save-always justru penting
+      # di sini: cache .deb harus tetap tersimpan walau STEP 15 (register CRD)
+      # gagal, supaya re-run berikutnya tidak mengunduh ulang ~1GB.
+      # Solusi resmi: pisah restore + save, dan save pakai `if: always()`.
+      - name: Restore apt package cache (re-run cepat, tak unduh ulang ~1GB)
+        uses: actions/cache/restore@v4
+        with:
+          path: /home/runner/apt-archives
+          key: apt-xfce-ubuntu-2404-${{ steps.dated.outputs.today }}
+          restore-keys: |
+            apt-xfce-ubuntu-2404-
+
+      # ============================================================
+      # PREPARE SYSTEM
+      # ============================================================
+      - name: Prepare System
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/01-prepare-system.sh"
+
+      # ============================================================
+      # INSTALL XFCE DESKTOP
+      # ============================================================
+      - name: Install XFCE Desktop
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/02-install-xfce-desktop.sh"
+
+      # ============================================================
+      # CREATE REMOTE USER
+      # ============================================================
+      - name: Setup Remote User
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/03-setup-remote-user.sh"
+
+      # ============================================================
+      # INSTALL GOOGLE CHROME
+      # ============================================================
+      - name: Install Google Chrome
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/04-install-google-chrome.sh"
+
+      # ============================================================
+      # INSTALL OPENCODE CLI
+      # ============================================================
+      - name: Install OpenCode CLI
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/05-install-opencode-cli.sh"
+
+      # ============================================================
+      # INSTALL CHROME REMOTE DESKTOP
+      # ============================================================
+      - name: Install Chrome Remote Desktop
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/06-install-chrome-remote-desktop.sh"
+
+      # Simpan arsip .deb ke cache GitHub SEKARANG (sebelum register) -
+      # kalau STEP 15 gagal & user re-run, install tidak perlu unduh ulang.
+      - name: Sync apt cache for GitHub save
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/07-sync-apt-cache-for-github-save.sh"
+
+      # Cache disimpan saat .deb berukuran besar (XFCE, Chrome, OpenCode,
+      # Chrome Remote Desktop, KVM) sudah ada di /var/cache/apt/archives.
+      # Diletakkan SEBELUM STEP 15 sengaja: `if: always()` tetap menyimpan
+      # cache walau step sebelumnya gagal, dan karena tidak ada di akhir job,
+      # cache tidak ikut hilang bila job kena timeout 6 jam saat Keep Alive.
+      - name: Save apt package cache
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: /home/runner/apt-archives
+          key: apt-xfce-ubuntu-2404-${{ steps.dated.outputs.today }}
+
+      # ============================================================
+      # CONFIGURE XFCE SESSION (CRD HEADLESS, DIRECT EXEC)
+      # Tidak memakai Xsession/lightdm/startxfce4 wrapper: file sesi
+      # memanggil /usr/bin/xfce4-session langsung dengan env eksplisit.
+      # ============================================================
+      - name: Configure CRD XFCE Session
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/08-configure-crd-xfce-session.sh"
+
+      # ============================================================
+      # DISABLE SCREENSAVER + LOCK + SUSPEND (HEADLESS CRD)
+      # Mencegah XFCE mengunci/mematikan layar dan memutus sesi CRD.
+      # ============================================================
+      - name: Disable Screensaver and Lock
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/09-disable-screensaver-and-lock.sh"
+
+      # ============================================================
+      # XFCE PERFORMANCE TUNING
+      #
+      # Compositor xfwm4 DIMATIKAN. Tanpa compositor:
+      #   - tidak ada damage/composite pass tambahan tiap frame,
+      #   - xfwm4 tidak memakai GL untuk shadow/alpha,
+      #   - CPU idle jauh lebih rendah di software rendering (llvmpipe),
+      #   - CRD menangkap frame X11 lebih sedikit dan lebih murah.
+      #
+      # Selain itu: animasi GTK dimatikan, autostart XFCE dipangkas
+      # (tanpa Thunar daemon, tanpa power-manager, tanpa screensaver),
+      # dan timer/service latar yang bisa menaikkan beban CPU dimatikan.
+      # ============================================================
+      - name: Configure XFCE Performance
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/10-configure-xfce-performance.sh"
+
+      # ============================================================
+      # INSTALL SAFE-UPGRADE HELPER
+      # Pengganti `sudo apt upgrade` manual yang memutus sesi CRD.
+      # ============================================================
+      - name: Install Safe Upgrade Helper
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/11-install-safe-upgrade-helper.sh"
+
+      # ============================================================
+      # SET WALLPAPER (BLACK UNICAT / CATPPUCCIN)
+      # ============================================================
+      - name: Set Wallpaper
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/12-set-wallpaper.sh"
+
+      # ============================================================
+      # INSTALL CATPPUCCIN THEME (MACCHIATO + MAUVE)
+      #
+      # Tema desktop lengkap untuk sesi CRD:
+      #   1) Ikon Papirus + folder warna Catppuccin
+      #   2) Tema GTK2/3/4 (termasuk assets xfwm4 untuk window manager)
+      #   3) Override libadwaita di ~/.config/gtk-4.0
+      #   4) Kursor Catppuccin
+      #   5) Font JetBrainsMono Nerd Font
+      #   6) Palet Catppuccin untuk xfce4-terminal
+      # ============================================================
+      - name: Install Catppuccin Theme (Macchiato + Mauve)
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/13-install-catppuccin-theme-macchiato-mauve.sh"
+
+      # ============================================================
+      # SET CRD PIN
+      #
+      # Default:
+      #   123456
+      #
+      # Custom:
+      #   Create GitHub Actions secret/variable:
+      #
+      #   CRD_PIN=your-pin
+      # ============================================================
+      - name: Configure CRD PIN
+        env:
+          CUSTOM_CRD_PIN: ${{ secrets.CRD_PIN }}
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/14-configure-crd-pin.sh"
+
+      # ============================================================
+      # AUTHORIZE VIA WEB + REGISTER CHROME REMOTE DESKTOP
+      #
+      # Kenapa: kode OAuth `--code=...` dari halaman headless Google hanya
+      # sekali pakai dan cepat kadaluarsa. Instalasi desktop di STEP 01-14
+      # butuh 8-15 menit, jadi kode yang diminta di awal (workflow_dispatch)
+      # sudah kedaluwarsa saat dipakai.
+      #
+      # Solusi: setelah desktop siap, step ini menjalankan form web lokal dan
+      # mengeksposnya lewat Cloudflare quick tunnel (tanpa akun). User baru
+      # membuat kode SETELAH URL muncul, lalu submit dari jaringan mana pun.
+      # Kalau registrasi gagal, user bisa submit kode baru tanpa re-run.
+      #
+      # Keamanan: URL memakai token acak 128-bit; form hanya menerima perintah
+      # `start-host` (allowlist karakter); bind ke 127.0.0.1; hanya satu
+      # perintah yang diproses pada satu waktu. Jangan bagikan URL ini.
+      # ============================================================
+      - name: Authorize & Register Chrome Remote Desktop (Web UI)
+        env:
+          FALLBACK_CMD: ${{ inputs.crd_host_command }}
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/15-authorize-register-chrome-remote-desktop-web-ui.sh"
+
+      # ============================================================
+      # VERIFY
+      # ============================================================
+      - name: Verify Installation
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/16-verify-installation.sh"
+
+      # ============================================================
+      # SMOKE TEST + BUILD BENCHMARK
+      #
+      # Smoke test menjalankan sesi XFCE di Xvfb dengan HOME terisolasi,
+      # lalu memastikan xfwm4 + xfce4-panel benar-benar start dengan konfigurasi
+      # yang kita seed. Kegagalan smoke test hanya PERINGATAN (tidak fatal),
+      # karena build produksi tetap memakai Xorg CRD sungguhan.
+      #
+      # Benchmark mengumpulkan metrik build (waktu, disk, RAM, jumlah paket)
+      # dan menuliskannya ke Job Summary.
+      # ============================================================
+      - name: Smoke Test & Build Benchmark
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/17-smoke-test-and-benchmark.sh"
+
+      # ============================================================
+      # KEEP ALIVE
+      #
+      # Bukan sekadar `sleep` panjang. Job harus tetap hidup sampai batas
+      # 6 jam, TETAPI daemon chrome-remote-desktop bisa mati di tengah sesi
+      # (crash, oom-kill, xfwm4/sesi X hilang).
+      # Loop di bawah setiap INTERVAL:
+      #   1. Log heartbeat -> log job tetap berdenyut, gampang dibedakan
+      #      dari job yang hang, dan sisa waktu selalu terlihat.
+      #   2. Cek chrome-remote-desktop@runner; kalau tidak aktif (atau proses
+      #      xfce4-session/xfwm4 milik user 'runner' hilang 2 cek berturut-
+      #      turut), restart daemon supaya sesi desktop bisa diakses lagi
+      #      TANPA re-run workflow.
+      # Anti tight-loop: restart dibatasi maksimal 1x per 2 menit.
+      # Sisa waktu dihitung dari JOB_START_EPOCH agar tidak menabrak
+      # timeout job 360 menit.
+      # ============================================================
+      - name: Keep Alive
+        run: bash "$GITHUB_WORKSPACE/scripts/xfce/18-keep-alive.sh"

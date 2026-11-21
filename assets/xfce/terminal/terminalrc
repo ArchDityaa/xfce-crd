@@ -1,0 +1,19 @@
+[Configuration]
+# Palet Catppuccin Macchiato untuk xfce4-terminal.
+# Ditulis manual karena xfce4-terminal tidak memakai profil GNOME Terminal.
+FontName=JetBrainsMono Nerd Font 11
+FontUseSystemFont=false
+FontMonospace=true
+BoldIsBright=true
+UseBoldText=false
+ColorForeground=#cdd6f4
+ColorBackground=#1e1e2e
+ColorCursor=#f5e0dc
+ColorPalette=#45475a;#f38ba8;#a6e3a1;#f9e2af;#89b4fa;#f5c2e7;#94e2d5;#bac2de;#a6adc8;#f38ba8;#a6e3a1;#f9e2af;#89b4fa;#f5c2e7;#94e2d5;#a6adc8
+Opacity=100
+DoubleClickPath=open
+DoubleClickSource=''
+ScrollingBar=TERMINAL_SCROLLBAR_NONE
+TitleButtons=close;minimize;maximize;undock;shade;menu
+MiscDefaultMenubarDefault=TRUE
+MiscMenubarShowTabs=FALSE

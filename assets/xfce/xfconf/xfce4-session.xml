@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Sesi XFCE untuk Chrome Remote Desktop.
+
+  Client list dipangkas dibanding default XFCE:
+    - TIDAK ada Thunar daemon            (tidak perlu tanpa media removable)
+    - TIDAK ada xfce4-power-manager   (DPMS dimatikan lewat xset)
+    - TIDAK ada xfce4-screensaver     (tidak ada lock sama sekali)
+    - TIDAK ada xfce4-clipman         (clipboard bawaan X11 cukup)
+
+  Yang DIPERTAHANKAN:
+    xfwm4, xfsettingsd, xfce4-panel, xfdesktop, xfce4-notifyd
+
+  Prioritas (semakin rendah angka, semakin cepat dijalankan):
+    xfwm4 (15) -> xfsettingsd (20) -> xfce4-panel (25) ->
+    xfdesktop (30) -> xfce4-notifyd (35)
+
+  SaveOnExit=false supaya XFCE tidak pernah menanyakan "save session?"
+  (dialog itu menggantung sesi CRD karena tidak ada interaksi TTY).
+-->
+<channel name="xfce4-session" version="1.0">
+  <property name="general" type="empty">
+    <property name="FailsafeSessionName" type="string" value="Failsafe"/>
+    <property name="SaveOnExit" type="bool" value="false"/>
+  </property>
+  <property name="sessions" type="empty">
+    <property name="Failsafe" type="empty">
+      <property name="IsFailsafe" type="bool" value="true"/>
+      <property name="Count" type="int" value="5"/>
+      <property name="Client0_Command" type="array">
+        <value type="string" value="xfwm4"/>
+      </property>
+      <property name="Client0_Priority" type="int" value="15"/>
+      <property name="Client0_PerScreen" type="bool" value="false"/>
+      <property name="Client1_Command" type="array">
+        <value type="string" value="xfsettingsd"/>
+      </property>
+      <property name="Client1_Priority" type="int" value="20"/>
+      <property name="Client1_PerScreen" type="bool" value="false"/>
+      <property name="Client2_Command" type="array">
+        <value type="string" value="xfce4-panel"/>
+      </property>
+      <property name="Client2_Priority" type="int" value="25"/>
+      <property name="Client2_PerScreen" type="bool" value="false"/>
+      <property name="Client3_Command" type="array">
+        <value type="string" value="xfdesktop"/>
+      </property>
+      <property name="Client3_Priority" type="int" value="30"/>
+      <property name="Client3_PerScreen" type="bool" value="false"/>
+      <property name="Client4_Command" type="array">
+        <value type="string" value="xfce4-notifyd"/>
+      </property>
+      <property name="Client4_Priority" type="int" value="35"/>
+      <property name="Client4_PerScreen" type="bool" value="false"/>
+    </property>
+  </property>
+</channel>

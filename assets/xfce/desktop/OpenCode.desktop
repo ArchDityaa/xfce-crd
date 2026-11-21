@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=OpenCode
+Comment=Open OpenCode CLI in a terminal
+Exec=xfce4-terminal --command=opencode
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;
