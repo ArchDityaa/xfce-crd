@@ -63,7 +63,7 @@ jobs:
       # gagal, supaya re-run berikutnya tidak mengunduh ulang ~1GB.
       # Solusi resmi: pisah restore + save, dan save pakai `if: always()`.
       - name: Restore apt package cache (re-run cepat, tak unduh ulang ~1GB)
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: /home/runner/apt-archives
           key: apt-xfce-ubuntu-2404-${{ steps.dated.outputs.today }}
@@ -119,7 +119,7 @@ jobs:
       - name: Save apt package cache
         if: always()
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: /home/runner/apt-archives
           key: apt-xfce-ubuntu-2404-${{ steps.dated.outputs.today }}
